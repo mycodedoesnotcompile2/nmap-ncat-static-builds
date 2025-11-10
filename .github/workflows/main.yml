@@ -21,11 +21,6 @@ env:
   ZLIB_EXTRACT_DIR_PATH: "/tmp/zlib"
   ZLIB_BUILD_PATH: "/tmp/zlib/install"
 
-  LIBEVENT_DL: "https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz"
-  LIBEVENT_TAR_PATH: "/tmp/libevent.tar.gz"
-  LIBEVENT_EXTRACT_DIR_PATH: "/tmp/libevent"
-  LIBEVENT_BUILD_PATH: "/tmp/libevent/install"
-
   NMAP_DL: "https://nmap.org/dist/nmap-7.98.tgz"
   NMAP_TAR_PATH: "/tmp/nmap.tar.gz"
   NMAP_EXTRACT_DIR_PATH: "/tmp/nmap"
@@ -100,13 +95,12 @@ jobs:
     - name: Create the necessary folders
       run: |
         cd /tmp/
-        mkdir -p $OPENSSL_EXTRACT_DIR_PATH $ZLIB_EXTRACT_DIR_PATH $LIBEVENT_EXTRACT_DIR_PATH $NMAP_EXTRACT_DIR_PATH $NMAP_STATIC_PACKAGE_DIR_PATH
+        mkdir -p $OPENSSL_EXTRACT_DIR_PATH $ZLIB_EXTRACT_DIR_PATH $NMAP_EXTRACT_DIR_PATH $NMAP_STATIC_PACKAGE_DIR_PATH
 
     - name: Download the necessary packages
       run: |
         wget -nv $OPENSSL_DL -O $OPENSSL_TAR_PATH
         wget -nv $ZLIB_DL -O $ZLIB_TAR_PATH
-        wget -nv $LIBEVENT_DL -O $LIBEVENT_TAR_PATH
         wget -nv $NMAP_DL -O $NMAP_TAR_PATH
         
     
@@ -142,20 +136,7 @@ jobs:
         make install
 
         find $ZLIB_BUILD_PATH -type f -exec ls -alh {} \;
-
-
-    - name: Compile Libevent
-      run: |
-        cd /tmp/
-        tar -xzf $LIBEVENT_TAR_PATH -C $LIBEVENT_EXTRACT_DIR_PATH --strip-components=1
         
-        cd $LIBEVENT_EXTRACT_DIR_PATH
-
-        PKG_CONFIG_PATH=$OPENSSL_LIB_DIR_PKGCONFIG ./configure --prefix=$LIBEVENT_BUILD_PATH --disable-shared --enable-static --with-pic
-        make -j$(nproc) > /dev/null
-        make install
-
-        find $LIBEVENT_BUILD_PATH -type f -exec ls -alh {} \;
 
     - name: Compile Nmap
       run: |
@@ -168,7 +149,7 @@ jobs:
                                           --without-subversion --without-zenmap --without-ndiff --without-nmap-update --without-nping \
                                           --with-pcre=/usr --with-libdnet=included \
                                           --without-libssh2 --without-liblua \
-                                          --with-openssl="$OPENSSL_LIB_DIR" \
+                                          --with-openssl="$OPENSSL_BUILD_PATH" \
                                           --with-libz="$ZLIB_BUILD_PATH/lib/" \
         
         make -j$(nproc) static > /dev/null
