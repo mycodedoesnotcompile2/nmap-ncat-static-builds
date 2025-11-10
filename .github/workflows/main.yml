@@ -114,15 +114,18 @@ jobs:
         make -j$(nproc) > /dev/null
         make install
 
+        
         find $OPENSSL_BUILD_PATH -type f -exec ls -alh {} \;
 
         if [[ $ARCH =~ "aarch64" ]]; then
-          echo "OPENSSL_LIB_DIR=$OPENSSL_BUILD_PATH/lib" >> $GITHUB_ENV
-          echo "OPENSSL_LIB_DIR_PKGCONFIG=$OPENSSL_BUILD_PATH/lib/pkgconfig" >> $GITHUB_ENV
+          echo "test"
+          #echo "OPENSSL_LIB_DIR=$OPENSSL_BUILD_PATH/lib" >> $GITHUB_ENV
+          #echo "OPENSSL_LIB_DIR_PKGCONFIG=$OPENSSL_BUILD_PATH/lib/pkgconfig" >> $GITHUB_ENV
         
         elif [[ $ARCH =~ "x86_64" ]]; then
-          echo "OPENSSL_LIB_DIR=$OPENSSL_BUILD_PATH/lib64" >> $GITHUB_ENV
-          echo "OPENSSL_LIB_DIR_PKGCONFIG=$OPENSSL_BUILD_PATH/lib64/pkgconfig" >> $GITHUB_ENV
+          mv "$OPENSSL_BUILD_PATH/lib64/" "$OPENSSL_BUILD_PATH/lib/"
+          #echo "OPENSSL_LIB_DIR=$OPENSSL_BUILD_PATH/lib64" >> $GITHUB_ENV
+          #echo "OPENSSL_LIB_DIR_PKGCONFIG=$OPENSSL_BUILD_PATH/lib64/pkgconfig" >> $GITHUB_ENV
         fi 
 
     - name: Compile ZLIB
