@@ -161,8 +161,10 @@ jobs:
       run: |
         cd /tmp/
         
-        ldd "$NMAP_STATIC_BUILD_PATH/bin/tor" || true
-        "$NMAP_STATIC_BUILD_PATH/bin/tor" --version
+        ldd "$NMAP_STATIC_BUILD_PATH/bin/nmap" || true
+        ldd "$NMAP_STATIC_BUILD_PATH/bin/ncat" || true
+        "$NMAP_STATIC_BUILD_PATH/bin/nmap" --version
+        "$NMAP_STATIC_BUILD_PATH/bin/ncat" --version
 
 
     - name: Make package
@@ -232,7 +234,7 @@ jobs:
          wget -nv "$ARTIFACT_ARM64_MUSL_ZIP_URL"
          wget -nv "$ARTIFACT_ARM64_MUSL_HASH_URL"
 
-         sha256sum -c *-aarch64-musl.zip.sha256.txt
+         sha256sum -c *.sha256.txt
          
      - name: List builds
        run: |
@@ -254,4 +256,4 @@ jobs:
          name: ${{ env.NMAP_VERSION }}
          tag_name: ${{ env.NMAP_VERSION }}
          files: |
-           /tmp/results/tor-*
+           /tmp/results/nmap-*
