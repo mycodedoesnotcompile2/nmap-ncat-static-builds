@@ -179,7 +179,7 @@ jobs:
       run: |
         cd $NMAP_STATIC_PACKAGE_DIR_PATH
         
-        NMAP_PREFIX=$(basename $NMAP_DL .tar.gz)
+        NMAP_PREFIX=$(basename $NMAP_DL .tgz)
         NMAP_VERSION="$(date +'%Y-%m-%d')-$NMAP_PREFIX"
         echo "NMAP_VERSION=$NMAP_PREFIX" >> $GITHUB_OUTPUT
         
