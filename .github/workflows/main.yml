@@ -160,10 +160,17 @@ jobs:
     - name: Check static-ness of Nmap binaries and display build information
       run: |
         cd /tmp/
-        
+        echo "[+] ldd nmap"
         ldd "$NMAP_STATIC_BUILD_PATH/bin/nmap" || true
-        ldd "$NMAP_STATIC_BUILD_PATH/bin/ncat" || true
+        echo "##################"
+        echo "[+] nmap --version"
         "$NMAP_STATIC_BUILD_PATH/bin/nmap" --version
+        echo "##################"
+
+        echo "[+] ldd ncat"
+        ldd "$NMAP_STATIC_BUILD_PATH/bin/ncat" || true
+        echo "##################"
+        echo "[+] ncat --version"
         "$NMAP_STATIC_BUILD_PATH/bin/ncat" --version
 
 
