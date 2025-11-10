@@ -197,7 +197,7 @@ jobs:
           ${{ env.NMAP_STATIC_PACKAGE_HASH_PATH }}
 
 
-    # this is step is necessary because Alpine ARM64 is not supported by the "upload-artifact"" action (cf. https://github.com/actions/upload-artifact/issues/739)
+    # this step is necessary because Alpine ARM64 is not supported by the "upload-artifact" action (cf. https://github.com/actions/upload-artifact/issues/739)
     - name: Upload artifact for arm64-musl
       id: artifact_arm64_musl_urls
       if: ${{ contains(env.ARCH, 'aarch64') && contains(env.LIBC, 'musl') }}
