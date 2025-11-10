@@ -164,14 +164,14 @@ jobs:
         tar -xzf $NMAP_TAR_PATH -C $NMAP_EXTRACT_DIR_PATH --strip-components=1
         
         cd $NMAP_EXTRACT_DIR_PATH
-        CPPFLAGS="-I$OPENSSL_BUILD_PATH/include" ./configure --prefix=$NMAP_STATIC_BUILD_PATH \
-                                      --disable-asciidoc --disable-manpage --disable-html-manual --disable-unittests \
-                                      --enable-static-tor --enable-static-libevent \
-                                      --with-libevent-dir=$LIBEVENT_BUILD_PATH \
-                                      --enable-static-openssl --with-openssl-dir=$OPENSSL_LIB_DIR \
-                                      --enable-static-zlib --with-zlib-dir=$ZLIB_BUILD_PATH
+        CPPFLAGS="-I$ZLIB_BUILD_PATH/include" ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
+                                          --without-subversion --without-zenmap --without-ndiff --without-nmap-update --without-nping \
+                                          --with-pcre=/usr --with-libdnet=included \
+                                          --without-libssh2 --without-liblua \
+                                          --with-openssl="$OPENSSL_LIB_DIR" \
+                                          --with-libz="$ZLIB_BUILD_PATH/lib/" \
         
-        make -j$(nproc) > /dev/null
+        make -j$(nproc) static > /dev/null
         make install
 
         find $NMAP_STATIC_BUILD_PATH -type f -exec ls -alh {} \;
