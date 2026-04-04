@@ -189,7 +189,7 @@ jobs:
 
       
     - name: Upload artifact for all containers except arm64-musl
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: ${{ !(contains(env.ARCH, 'aarch64') && contains(env.LIBC, 'musl')) }}
       with:
         name: binary-${{ matrix.ARCH }}-${{ matrix.LIBC }}
@@ -223,7 +223,7 @@ jobs:
     
     steps:
      - name: Download artifacts
-       uses: actions/download-artifact@v4
+       uses: actions/download-artifact@v8
        with:
         pattern: binary-*
         merge-multiple: true
