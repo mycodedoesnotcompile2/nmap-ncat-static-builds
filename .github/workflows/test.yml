@@ -1,0 +1,264 @@
+name: Build binaries
+
+on:
+  workflow_dispatch
+  #schedule:
+  #  - cron: '5 5 * * *'
+
+env:
+  APT: apt -y -qq -o=Dpkg::Use-Pty=0
+  
+  OPENSSL_DL: "https://github.com/openssl/openssl/releases/download/openssl-3.5.4/openssl-3.5.4.tar.gz"
+  OPENSSL_TAR_PATH: "/tmp/openssl.tar.gz"
+  OPENSSL_EXTRACT_DIR_PATH: "/tmp/openssl"
+  OPENSSL_BUILD_PATH: "/tmp/openssl/install"
+
+  ZLIB_DL: "https://zlib.net/current/zlib.tar.gz"
+  ZLIB_TAR_PATH: "/tmp/zlib.tar.gz"
+  ZLIB_EXTRACT_DIR_PATH: "/tmp/zlib"
+  ZLIB_BUILD_PATH: "/tmp/zlib/install"
+
+  NMAP_DL: "https://nmap.org/dist/nmap-7.98.tgz"
+  NMAP_TAR_PATH: "/tmp/nmap.tar.gz"
+  NMAP_EXTRACT_DIR_PATH: "/tmp/nmap"
+
+  NMAP_STATIC_BUILD_PATH: "/tmp/nmap_static"
+  NMAP_STATIC_PACKAGE_DIR_PATH: "/tmp/nmap_package"
+  
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        ARCH: [x86_64, aarch64]
+        LIBC: [glibc, musl]
+        include:
+          - OS: ubuntu-latest
+            ARCH: x86_64
+          
+          - OS: ubuntu-24.04-arm
+            ARCH: aarch64
+
+          - TARGET: aarch64-apple-darwin
+            OS: macos-latest
+            ARCH: aarch64
+
+          - TARGET: x86_64-apple-darwin
+            OS: macos-26-intel
+            ARCH: x86_64
+          
+          - TARGET: x86_64-pc-windows-msvc
+            OS: windows-latest
+            ARCH: x86_64
+
+          - TARGET: aarch64-pc-windows-msvc
+            OS: windows-11-arm
+            ARCH: aarch64
+
+          - CONTAINER: debian:bookworm
+            LIBC: glibc
+
+          - CONTAINER: alpine:latest
+            LIBC: musl
+            
+    runs-on: ${{ matrix.OS }}
+    
+    container:
+      image: ${{ matrix.CONTAINER }}
+    
+    env:
+      OS: ${{ matrix.OS }}
+      ARCH: ${{ matrix.ARCH }}
+      CONTAINER: ${{ matrix.CONTAINER }}
+      LIBC: ${{ matrix.LIBC }}
+
+    outputs:
+      NMAP_VERSION: ${{ steps.release_version.outputs.NMAP_VERSION }}
+      ARTIFACT_ARM64_MUSL_ZIP_URL: ${{ steps.artifact_arm64_musl_urls.outputs.ARTIFACT_ARM64_MUSL_ZIP_URL }}
+      ARTIFACT_ARM64_MUSL_HASH_URL: ${{ steps.artifact_arm64_musl_urls.outputs.ARTIFACT_ARM64_MUSL_HASH_URL }}
+  
+    steps:
+    - name: Install bash prerequisites for alpine
+      if: contains(env.CONTAINER, 'alpine')
+      run: |
+        apk -q update && apk add bash
+      shell: sh
+      
+    - name: Install prerequisites
+      run: |
+        if [[ $CONTAINER =~ "debian" ]]; then
+          $APT update && $APT install -y build-essential file sudo bash wget tar pkg-config zip
+          
+          dpkg --get-selections | grep -i libssl
+          $APT autoremove --purge libssl-dev
+        fi
+        
+        if [[ $CONTAINER =~ "alpine" ]]; then
+          apk -q update && apk add build-base file sudo bash shadow musl wget make tar perl linux-headers pkgconfig zip coreutils curl
+          apk del openssl-dev
+        fi
+        
+        sudo chsh root -s /bin/bash
+
+    - name: Create the necessary folders
+      run: |
+        cd /tmp/
+        mkdir -p $OPENSSL_EXTRACT_DIR_PATH $ZLIB_EXTRACT_DIR_PATH $NMAP_EXTRACT_DIR_PATH $NMAP_STATIC_PACKAGE_DIR_PATH
+
+    - name: Download the necessary packages
+      run: |
+        wget -nv $OPENSSL_DL -O $OPENSSL_TAR_PATH
+        wget -nv $ZLIB_DL -O $ZLIB_TAR_PATH
+        wget -nv $NMAP_DL -O $NMAP_TAR_PATH
+        
+    
+    - name: Compile OpenSSL
+      run: |
+        cd /tmp/
+        tar -xzf $OPENSSL_TAR_PATH -C $OPENSSL_EXTRACT_DIR_PATH --strip-components=1
+        
+        cd $OPENSSL_EXTRACT_DIR_PATH
+        ./config --prefix=$OPENSSL_BUILD_PATH no-shared no-dso no-docs > /dev/null
+        make -j$(nproc) > /dev/null
+        make install
+
+        if [[ $ARCH =~ "x86_64" ]]; then
+          mv "$OPENSSL_BUILD_PATH/lib64/" "$OPENSSL_BUILD_PATH/lib/"
+        fi 
+        
+        find $OPENSSL_BUILD_PATH -type f -exec ls -alh {} \;
+        
+    - name: Compile ZLIB
+      run: |
+        cd /tmp/
+        tar -xzf $ZLIB_TAR_PATH -C $ZLIB_EXTRACT_DIR_PATH --strip-components=1
+        
+        cd $ZLIB_EXTRACT_DIR_PATH
+        ./configure --prefix=$ZLIB_BUILD_PATH --static
+        make -j$(nproc) > /dev/null
+        make install
+
+        find $ZLIB_BUILD_PATH -type f -exec ls -alh {} \;
+
+    - name: Compile Nmap
+      run: |
+        cd /tmp/
+        
+        tar -xzf $NMAP_TAR_PATH -C $NMAP_EXTRACT_DIR_PATH --strip-components=1
+        
+        cd $NMAP_EXTRACT_DIR_PATH
+        CPPFLAGS="-I$ZLIB_BUILD_PATH/include" ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
+                                          --without-subversion --without-zenmap --without-ndiff --without-nmap-update --without-nping \
+                                          --with-pcre=/usr --with-libdnet=included \
+                                          --without-libssh2 --without-liblua \
+                                          --with-openssl="$OPENSSL_BUILD_PATH" \
+                                          --with-libz="$ZLIB_BUILD_PATH/lib/" \
+        
+        make -j$(nproc) static > /dev/null
+        make install
+
+        find $NMAP_STATIC_BUILD_PATH -type f -exec ls -alh {} \;
+
+    - name: Check static-ness of Nmap binaries and display build information
+      run: |
+        cd /tmp/
+        echo '$ ldd nmap'
+        ldd "$NMAP_STATIC_BUILD_PATH/bin/nmap" || true
+        echo "##################"
+        echo '$ nmap --version'
+        "$NMAP_STATIC_BUILD_PATH/bin/nmap" --version
+        echo "##################"
+
+        echo '$ ldd ncat'
+        ldd "$NMAP_STATIC_BUILD_PATH/bin/ncat" || true
+        echo "##################"
+        echo '$ ncat --version'
+        "$NMAP_STATIC_BUILD_PATH/bin/ncat" --version
+
+
+    - name: Make package
+      id: release_version
+      run: |
+        cd $NMAP_STATIC_PACKAGE_DIR_PATH
+        
+        NMAP_PREFIX=$(basename $NMAP_DL .tgz)
+        NMAP_VERSION="$(date +'%Y-%m-%d')-$NMAP_PREFIX"
+        echo "NMAP_VERSION=$NMAP_PREFIX" >> $GITHUB_OUTPUT
+        
+        NMAP_STATIC_PACKAGE_FILENAME="$NMAP_PREFIX-linux-$ARCH-$LIBC.zip"
+        NMAP_STATIC_PACKAGE_FILE_PATH="$NMAP_STATIC_PACKAGE_DIR_PATH/$NMAP_STATIC_PACKAGE_FILENAME"
+        echo "NMAP_STATIC_PACKAGE_FILE_PATH=$NMAP_STATIC_PACKAGE_FILE_PATH" >> $GITHUB_ENV
+        
+        NMAP_STATIC_PACKAGE_HASH_PATH="$NMAP_STATIC_PACKAGE_DIR_PATH/$NMAP_STATIC_PACKAGE_FILENAME.sha256.txt"
+        echo "NMAP_STATIC_PACKAGE_HASH_PATH=$NMAP_STATIC_PACKAGE_HASH_PATH" >> $GITHUB_ENV
+        
+        zip -r "$NMAP_STATIC_PACKAGE_FILENAME" "$NMAP_STATIC_BUILD_PATH"
+        sha256sum --tag "$(basename "$NMAP_STATIC_PACKAGE_FILENAME")" | tee "$NMAP_STATIC_PACKAGE_HASH_PATH"
+
+      
+    - name: Upload artifact for all containers except arm64-musl
+      uses: actions/upload-artifact@v7
+      if: ${{ !(contains(env.ARCH, 'aarch64') && contains(env.LIBC, 'musl')) }}
+      with:
+        name: binary-${{ matrix.ARCH }}-${{ matrix.LIBC }}
+        path: |
+          ${{ env.NMAP_STATIC_PACKAGE_FILE_PATH }}
+          ${{ env.NMAP_STATIC_PACKAGE_HASH_PATH }}
+
+
+    # this step is necessary because Alpine ARM64 is not supported by the "upload-artifact" action (cf. https://github.com/actions/upload-artifact/issues/739)
+    - name: Upload artifact for arm64-musl
+      id: artifact_arm64_musl_urls
+      if: ${{ contains(env.ARCH, 'aarch64') && contains(env.LIBC, 'musl') }}
+      run: |
+        cd /tmp/
+        ARTIFACT_ARM64_MUSL_ZIP_URL=$(curl -sS --upload-file $NMAP_STATIC_PACKAGE_FILE_PATH https://transfer.adminforge.de)
+        ARTIFACT_ARM64_MUSL_HASH_URL=$(curl -sS --upload-file $NMAP_STATIC_PACKAGE_HASH_PATH https://transfer.adminforge.de)
+
+        echo "ARTIFACT_ARM64_MUSL_ZIP_URL=$ARTIFACT_ARM64_MUSL_ZIP_URL" >> $GITHUB_OUTPUT
+        echo "ARTIFACT_ARM64_MUSL_HASH_URL=$ARTIFACT_ARM64_MUSL_HASH_URL" >> $GITHUB_OUTPUT
+        
+
+######################################################
+
+  deploy_release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+       NMAP_VERSION: ${{ needs.build.outputs.NMAP_VERSION }}
+       ARTIFACT_ARM64_MUSL_ZIP_URL: ${{ needs.build.outputs.ARTIFACT_ARM64_MUSL_ZIP_URL }}
+       ARTIFACT_ARM64_MUSL_HASH_URL: ${{ needs.build.outputs.ARTIFACT_ARM64_MUSL_HASH_URL }}
+    
+    steps:
+     - name: Download artifacts
+       uses: actions/download-artifact@v8
+       with:
+        pattern: binary-*
+        merge-multiple: true
+        path: /tmp/results
+
+     - name: Download arm64-musl artifact
+       run: |
+         cd "/tmp/results"
+         wget -nv "$ARTIFACT_ARM64_MUSL_ZIP_URL"
+         wget -nv "$ARTIFACT_ARM64_MUSL_HASH_URL"
+
+         sha256sum -c *.sha256.txt
+         
+     - name: List builds
+       run: |
+          cd "/tmp/results"
+          ls -alh
+  
+          RELEASE_NOTES="/tmp/release_notes.txt"
+          echo "RELEASE_NOTES=$RELEASE_NOTES" >> $GITHUB_ENV
+          
+          cat *.sha256.txt > "$RELEASE_NOTES"
+          mkdir -p "/tmp/hashes"
+          mv -f *.sha256.txt "/tmp/hashes/"
+
