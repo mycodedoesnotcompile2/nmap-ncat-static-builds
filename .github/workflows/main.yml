@@ -21,7 +21,7 @@ env:
   ZLIB_EXTRACT_DIR_PATH: "/tmp/zlib"
   ZLIB_BUILD_PATH: "/tmp/zlib/install"
 
-  NMAP_DL: "https://nmap.org/dist/nmap-7.98.tgz"
+  NMAP_DL: "https://nmap.org/dist/nmap-7.99.tgz"
   NMAP_TAR_PATH: "/tmp/nmap.tar.gz"
   NMAP_EXTRACT_DIR_PATH: "/tmp/nmap"
 
