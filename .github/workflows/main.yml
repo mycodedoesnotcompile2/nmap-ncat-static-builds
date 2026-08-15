@@ -11,7 +11,7 @@ permissions:
 env:
   APT: apt -y -qq -o=Dpkg::Use-Pty=0
   
-  OPENSSL_DL: "https://github.com/openssl/openssl/releases/download/openssl-3.5.6/openssl-3.5.6.tar.gz"
+  OPENSSL_DL: "https://github.com/openssl/openssl/releases/download/openssl-3.5.6/openssl-3.5.7.tar.gz"
   OPENSSL_TAR_PATH: "/tmp/openssl.tar.gz"
   OPENSSL_EXTRACT_DIR_PATH: "/tmp/openssl"
   OPENSSL_BUILD_PATH: "/tmp/openssl/install"
@@ -21,7 +21,7 @@ env:
   ZLIB_EXTRACT_DIR_PATH: "/tmp/zlib"
   ZLIB_BUILD_PATH: "/tmp/zlib/install"
 
-  NMAP_DL: "https://nmap.org/dist/nmap-7.99.tgz"
+  NMAP_DL: "https://nmap.org/dist/nmap-7.991.tgz"
   NMAP_TAR_PATH: "/tmp/nmap.tar.gz"
   NMAP_EXTRACT_DIR_PATH: "/tmp/nmap"
 
