@@ -151,7 +151,7 @@ jobs:
                                           --with-pcre=/usr --with-libdnet=included --with-liblua=included \
                                           --without-libssh2 \
                                           --with-openssl="$OPENSSL_BUILD_PATH" \
-                                          --with-libz="$ZLIB_BUILD_PATH/lib/" \
+                                          --with-libz="$ZLIB_BUILD_PATH" \
         
         make -j$(nproc) static > /dev/null
         make install
