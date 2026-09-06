@@ -146,15 +146,14 @@ jobs:
         sed -i '/^#include <set>$/a #include <cstddef>' traceroute.cc
         ############################################################
         
-        CPPFLAGS="-I$ZLIB_BUILD_PATH/include" LDFLAGS="-static" ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
+        CPPFLAGS="-I$ZLIB_BUILD_PATH/include" ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
                                           --without-subversion --without-zenmap --without-ndiff --without-nmap-update --without-nping \
                                           --with-pcre=/usr --with-libdnet=included --with-liblua=included \
                                           --without-libssh2 \
                                           --with-openssl="$OPENSSL_BUILD_PATH" \
                                           --with-libz="$ZLIB_BUILD_PATH/lib/" \
         
-        #make -j$(nproc) static > /dev/null
-        make -j1 V=1 static
+        make -j$(nproc) static > /dev/null
         make install
 
         find $NMAP_STATIC_BUILD_PATH -type f -exec ls -alh {} \;
