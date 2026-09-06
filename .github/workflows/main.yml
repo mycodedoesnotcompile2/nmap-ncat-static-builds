@@ -149,7 +149,8 @@ jobs:
         CPPFLAGS="-I$ZLIB_BUILD_PATH/include" ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
                                           --without-subversion --without-zenmap --without-ndiff --without-nmap-update --without-nping \
                                           --with-pcre=/usr --with-libdnet=included \
-                                          --without-libssh2 --without-liblua \
+                                          #--without-libssh2 --without-liblua \
+                                          --without-libssh2 --with-liblua=included \
                                           --with-openssl="$OPENSSL_BUILD_PATH" \
                                           --with-libz="$ZLIB_BUILD_PATH/lib/" \
         
