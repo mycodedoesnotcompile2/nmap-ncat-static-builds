@@ -139,6 +139,12 @@ jobs:
         tar -xzf $NMAP_TAR_PATH -C $NMAP_EXTRACT_DIR_PATH --strip-components=1
         
         cd $NMAP_EXTRACT_DIR_PATH
+
+        ## Patch Nmap NOLUA regression august 2026 (https://chromium.googlesource.com/external/github.com/gentoo/gentoo/%2B/e1ef0cd485a5023627498ffac70460fb8dc8f9e1%5E%21)
+        sed -i '/^[[:space:]]*close_nse();$/i #ifndef NOLUA' nmap.cc
+        sed -i '/^[[:space:]]*close_nse();$/a #endif' nmap.cc
+        ############################################################
+        
         CPPFLAGS="-I$ZLIB_BUILD_PATH/include" ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
                                           --without-subversion --without-zenmap --without-ndiff --without-nmap-update --without-nping \
                                           --with-pcre=/usr --with-libdnet=included \
