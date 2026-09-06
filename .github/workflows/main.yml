@@ -11,7 +11,7 @@ permissions:
 env:
   APT: apt -y -qq -o=Dpkg::Use-Pty=0
   
-  OPENSSL_DL: "https://github.com/openssl/openssl/releases/download/openssl-3.5.7/openssl-3.5.7.tar.gz"
+  OPENSSL_DL: "https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz"
   OPENSSL_TAR_PATH: "/tmp/openssl.tar.gz"
   OPENSSL_EXTRACT_DIR_PATH: "/tmp/openssl"
   OPENSSL_BUILD_PATH: "/tmp/openssl/install"
