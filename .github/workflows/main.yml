@@ -146,7 +146,13 @@ jobs:
         sed -i '/^#include <set>$/a #include <cstddef>' traceroute.cc
         ############################################################
         
-        CPPFLAGS="-I$ZLIB_BUILD_PATH/include" ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
+        # Make the static zlib library explicitly visible to the linker.
+        export CPPFLAGS="-I$ZLIB_BUILD_PATH/include"
+        export LDFLAGS="-L$ZLIB_BUILD_PATH/lib"
+        export LIBS="$ZLIB_BUILD_PATH/lib/libz.a"
+        
+        #CPPFLAGS="-I$ZLIB_BUILD_PATH/include" 
+        ./configure -q --prefix=$NMAP_STATIC_BUILD_PATH \
                                           --without-subversion --without-zenmap --without-ndiff --without-nmap-update --without-nping \
                                           --with-pcre=/usr --with-libdnet=included --with-liblua=included \
                                           --without-libssh2 \
