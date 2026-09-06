@@ -126,7 +126,7 @@ jobs:
         tar -xzf $ZLIB_TAR_PATH -C $ZLIB_EXTRACT_DIR_PATH --strip-components=1
         
         cd $ZLIB_EXTRACT_DIR_PATH
-        ./configure --prefix=$ZLIB_BUILD_PATH --static
+        ./configure --prefix="$ZLIB_BUILD_PATH" --static
         make -j$(nproc) > /dev/null
         make install
 
@@ -153,7 +153,8 @@ jobs:
                                           --with-openssl="$OPENSSL_BUILD_PATH" \
                                           --with-libz="$ZLIB_BUILD_PATH/lib/" \
         
-        make -j$(nproc) static > /dev/null
+        #make -j$(nproc) static > /dev/null
+        make -j1 V=1 static
         make install
 
         find $NMAP_STATIC_BUILD_PATH -type f -exec ls -alh {} \;
